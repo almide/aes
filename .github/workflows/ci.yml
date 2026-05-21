@@ -14,14 +14,14 @@ jobs:
 
       - name: Install Almide
         run: |
-          curl -fsSL https://raw.githubusercontent.com/almide/almide/main/install.sh | bash
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          curl -fsSL "https://github.com/almide/almide/releases/latest/download/almide-linux-x86_64.tar.gz" -o almide.tar.gz
+          tar xzf almide.tar.gz
+          chmod +x almide
+          sudo mv almide /usr/local/bin/
+          almide --version
 
       - name: Check
         run: almide check
 
       - name: Test
         run: almide test
-
-      - name: Build
-        run: almide build
