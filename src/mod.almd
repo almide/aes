@@ -156,13 +156,15 @@ fn encrypt_block(block: Bytes, expanded_key: Bytes) -> Bytes = {
 // --- CFB8 Mode ---
 
 type Cfb8State = {
+  key: Bytes,
   expanded_key: Bytes,
   iv: Bytes,
 }
 
 fn new_cfb8(key: Bytes, iv: Bytes) -> Cfb8State =
-  { expanded_key: expand_key(key), iv: bytes.slice(iv, 0, 16) }
+  { key: bytes.slice(key, 0, 16), expanded_key: expand_key(key), iv: bytes.slice(iv, 0, 16) }
 
+@inline_rust("{ let (d, niv) = aes_native::native_cfb8_encrypt(&{state}.key, &{state}.iv, &{plaintext}); AlmdRec0 { data: d, state: Cfb8State { key: {state}.key.clone(), expanded_key: {state}.expanded_key.clone(), iv: niv } } }")
 fn cfb8_encrypt(state: Cfb8State, plaintext: Bytes) -> { data: Bytes, state: Cfb8State } = {
   let len = bytes.len(plaintext)
   var out = bytes.new(len)
@@ -173,9 +175,10 @@ fn cfb8_encrypt(state: Cfb8State, plaintext: Bytes) -> { data: Bytes, state: Cfb
     out = bytes.set(out, i, cipher_byte)
     iv = bytes.concat(bytes.slice(iv, 1, 16), bytes.from_list([cipher_byte]))
   }
-  { data: out, state: { expanded_key: state.expanded_key, iv: iv } }
+  { data: out, state: { key: state.key, expanded_key: state.expanded_key, iv: iv } }
 }
 
+@inline_rust("{ let (d, niv) = aes_native::native_cfb8_decrypt(&{state}.key, &{state}.iv, &{ciphertext}); AlmdRec0 { data: d, state: Cfb8State { key: {state}.key.clone(), expanded_key: {state}.expanded_key.clone(), iv: niv } } }")
 fn cfb8_decrypt(state: Cfb8State, ciphertext: Bytes) -> { data: Bytes, state: Cfb8State } = {
   let len = bytes.len(ciphertext)
   var out = bytes.new(len)
@@ -186,7 +189,7 @@ fn cfb8_decrypt(state: Cfb8State, ciphertext: Bytes) -> { data: Bytes, state: Cf
     out = bytes.set(out, i, int.bxor(cipher_byte, bytes.read_u8(encrypted, 0)))
     iv = bytes.concat(bytes.slice(iv, 1, 16), bytes.from_list([cipher_byte]))
   }
-  { data: out, state: { expanded_key: state.expanded_key, iv: iv } }
+  { data: out, state: { key: state.key, expanded_key: state.expanded_key, iv: iv } }
 }
 
 // --- Tests ---
