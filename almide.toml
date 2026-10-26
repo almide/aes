@@ -1,6 +1,6 @@
 [package]
 name = "aes"
-version = "0.1.0"
+version = "0.3.0"
 
 [native-deps]
 aes_crate = { package = "aes", version = "0.8" }
