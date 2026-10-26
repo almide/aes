@@ -55,29 +55,29 @@ local fn gmul(a: Int, b: Int) -> Int = {
 // --- Key Expansion (AES-128: 16 bytes → 176 bytes) ---
 
 fn expand_key(key: Bytes) -> Bytes = {
-  var w = bytes.new(176)
-  for i in 0..16 { w = bytes.set(w, i, bytes.read_u8(key, i)) }
+  var w = bytes.zeros(176)
+  for i in 0..16 { w = bytes.set(w, i, bytes.get(key, i) ?? 0) }
   var i = 4
   while i < 44 {
-    let t0 = bytes.read_u8(w, (i - 1) * 4)
-    let t1 = bytes.read_u8(w, (i - 1) * 4 + 1)
-    let t2 = bytes.read_u8(w, (i - 1) * 4 + 2)
-    let t3 = bytes.read_u8(w, (i - 1) * 4 + 3)
+    let t0 = bytes.get(w, (i - 1) * 4) ?? 0
+    let t1 = bytes.get(w, (i - 1) * 4 + 1) ?? 0
+    let t2 = bytes.get(w, (i - 1) * 4 + 2) ?? 0
+    let t3 = bytes.get(w, (i - 1) * 4 + 3) ?? 0
     if i % 4 == 0 then {
-      let rc = bytes.read_u8(RCON, i / 4 - 1)
-      let s0 = int.bxor(bytes.read_u8(SBOX, t1), rc)
-      let s1 = bytes.read_u8(SBOX, t2)
-      let s2 = bytes.read_u8(SBOX, t3)
-      let s3 = bytes.read_u8(SBOX, t0)
-      w = bytes.set(w, i * 4,     int.bxor(bytes.read_u8(w, (i - 4) * 4), s0))
-      w = bytes.set(w, i * 4 + 1, int.bxor(bytes.read_u8(w, (i - 4) * 4 + 1), s1))
-      w = bytes.set(w, i * 4 + 2, int.bxor(bytes.read_u8(w, (i - 4) * 4 + 2), s2))
-      w = bytes.set(w, i * 4 + 3, int.bxor(bytes.read_u8(w, (i - 4) * 4 + 3), s3))
+      let rc = bytes.get(RCON, i / 4 - 1) ?? 0
+      let s0 = int.bxor(bytes.get(SBOX, t1) ?? 0, rc)
+      let s1 = bytes.get(SBOX, t2) ?? 0
+      let s2 = bytes.get(SBOX, t3) ?? 0
+      let s3 = bytes.get(SBOX, t0) ?? 0
+      w = bytes.set(w, i * 4,     int.bxor(bytes.get(w, (i - 4) * 4) ?? 0, s0))
+      w = bytes.set(w, i * 4 + 1, int.bxor(bytes.get(w, (i - 4) * 4 + 1) ?? 0, s1))
+      w = bytes.set(w, i * 4 + 2, int.bxor(bytes.get(w, (i - 4) * 4 + 2) ?? 0, s2))
+      w = bytes.set(w, i * 4 + 3, int.bxor(bytes.get(w, (i - 4) * 4 + 3) ?? 0, s3))
     } else {
-      w = bytes.set(w, i * 4,     int.bxor(bytes.read_u8(w, (i - 4) * 4), t0))
-      w = bytes.set(w, i * 4 + 1, int.bxor(bytes.read_u8(w, (i - 4) * 4 + 1), t1))
-      w = bytes.set(w, i * 4 + 2, int.bxor(bytes.read_u8(w, (i - 4) * 4 + 2), t2))
-      w = bytes.set(w, i * 4 + 3, int.bxor(bytes.read_u8(w, (i - 4) * 4 + 3), t3))
+      w = bytes.set(w, i * 4,     int.bxor(bytes.get(w, (i - 4) * 4) ?? 0, t0))
+      w = bytes.set(w, i * 4 + 1, int.bxor(bytes.get(w, (i - 4) * 4 + 1) ?? 0, t1))
+      w = bytes.set(w, i * 4 + 2, int.bxor(bytes.get(w, (i - 4) * 4 + 2) ?? 0, t2))
+      w = bytes.set(w, i * 4 + 3, int.bxor(bytes.get(w, (i - 4) * 4 + 3) ?? 0, t3))
     }
     i = i + 1
   }
@@ -88,27 +88,27 @@ fn expand_key(key: Bytes) -> Bytes = {
 
 local fn sub_bytes(state: Bytes) -> Bytes = {
   var s = state
-  for i in 0..16 { s = bytes.set(s, i, bytes.read_u8(SBOX, bytes.read_u8(s, i))) }
+  for i in 0..16 { s = bytes.set(s, i, bytes.get(SBOX, bytes.get(s, i) ?? 0) ?? 0) }
   s
 }
 
 local fn shift_rows(state: Bytes) -> Bytes = {
   var s = bytes.slice(state, 0, 16)
-  let t = bytes.read_u8(state, 1)
-  s = bytes.set(s, 1, bytes.read_u8(state, 5))
-  s = bytes.set(s, 5, bytes.read_u8(state, 9))
-  s = bytes.set(s, 9, bytes.read_u8(state, 13))
+  let t = bytes.get(state, 1) ?? 0
+  s = bytes.set(s, 1, bytes.get(state, 5) ?? 0)
+  s = bytes.set(s, 5, bytes.get(state, 9) ?? 0)
+  s = bytes.set(s, 9, bytes.get(state, 13) ?? 0)
   s = bytes.set(s, 13, t)
-  let t0 = bytes.read_u8(state, 2)
-  let t1 = bytes.read_u8(state, 6)
-  s = bytes.set(s, 2, bytes.read_u8(state, 10))
-  s = bytes.set(s, 6, bytes.read_u8(state, 14))
+  let t0 = bytes.get(state, 2) ?? 0
+  let t1 = bytes.get(state, 6) ?? 0
+  s = bytes.set(s, 2, bytes.get(state, 10) ?? 0)
+  s = bytes.set(s, 6, bytes.get(state, 14) ?? 0)
   s = bytes.set(s, 10, t0)
   s = bytes.set(s, 14, t1)
-  let t2 = bytes.read_u8(state, 15)
-  s = bytes.set(s, 15, bytes.read_u8(state, 11))
-  s = bytes.set(s, 11, bytes.read_u8(state, 7))
-  s = bytes.set(s, 7, bytes.read_u8(state, 3))
+  let t2 = bytes.get(state, 15) ?? 0
+  s = bytes.set(s, 15, bytes.get(state, 11) ?? 0)
+  s = bytes.set(s, 11, bytes.get(state, 7) ?? 0)
+  s = bytes.set(s, 7, bytes.get(state, 3) ?? 0)
   s = bytes.set(s, 3, t2)
   s
 }
@@ -118,10 +118,10 @@ local fn mix_columns(state: Bytes) -> Bytes = {
   var c = 0
   while c < 4 {
     let i = c * 4
-    let s0 = bytes.read_u8(state, i)
-    let s1 = bytes.read_u8(state, i + 1)
-    let s2 = bytes.read_u8(state, i + 2)
-    let s3 = bytes.read_u8(state, i + 3)
+    let s0 = bytes.get(state, i) ?? 0
+    let s1 = bytes.get(state, i + 1) ?? 0
+    let s2 = bytes.get(state, i + 2) ?? 0
+    let s3 = bytes.get(state, i + 3) ?? 0
     s = bytes.set(s, i,     int.band(int.bxor(int.bxor(gmul(2, s0), gmul(3, s1)), int.bxor(s2, s3)), 0xFF))
     s = bytes.set(s, i + 1, int.band(int.bxor(int.bxor(s0, gmul(2, s1)), int.bxor(gmul(3, s2), s3)), 0xFF))
     s = bytes.set(s, i + 2, int.band(int.bxor(int.bxor(s0, s1), int.bxor(gmul(2, s2), gmul(3, s3))), 0xFF))
@@ -134,7 +134,7 @@ local fn mix_columns(state: Bytes) -> Bytes = {
 local fn add_round_key(state: Bytes, ek: Bytes, round: Int) -> Bytes = {
   var s = state
   let off = round * 16
-  for i in 0..16 { s = bytes.set(s, i, int.bxor(bytes.read_u8(s, i), bytes.read_u8(ek, off + i))) }
+  for i in 0..16 { s = bytes.set(s, i, int.bxor(bytes.get(s, i) ?? 0, bytes.get(ek, off + i) ?? 0)) }
   s
 }
 
@@ -167,13 +167,13 @@ fn new_cfb8(key: Bytes, iv: Bytes) -> Cfb8State =
 @inline_rust("{ let (d, niv) = aes_native::native_cfb8_encrypt(&{state}.key, &{state}.iv, &{plaintext}); AlmdRec0 { data: d, state: Cfb8State { key: {state}.key.clone(), expanded_key: {state}.expanded_key.clone(), iv: niv } } }")
 fn cfb8_encrypt(state: Cfb8State, plaintext: Bytes) -> { data: Bytes, state: Cfb8State } = {
   let len = bytes.len(plaintext)
-  var out = bytes.new(len)
+  var out = bytes.zeros(len)
   var iv = state.iv
   for i in 0..len {
     let encrypted = encrypt_block(iv, state.expanded_key)
-    let cipher_byte = int.bxor(bytes.read_u8(plaintext, i), bytes.read_u8(encrypted, 0))
+    let cipher_byte = int.bxor(bytes.get(plaintext, i) ?? 0, bytes.get(encrypted, 0) ?? 0)
     out = bytes.set(out, i, cipher_byte)
-    iv = bytes.concat(bytes.slice(iv, 1, 16), bytes.from_list([cipher_byte]))
+    iv = bytes.slice(iv, 1, 16) + bytes.from_list([cipher_byte])
   }
   { data: out, state: { key: state.key, expanded_key: state.expanded_key, iv: iv } }
 }
@@ -181,13 +181,13 @@ fn cfb8_encrypt(state: Cfb8State, plaintext: Bytes) -> { data: Bytes, state: Cfb
 @inline_rust("{ let (d, niv) = aes_native::native_cfb8_decrypt(&{state}.key, &{state}.iv, &{ciphertext}); AlmdRec0 { data: d, state: Cfb8State { key: {state}.key.clone(), expanded_key: {state}.expanded_key.clone(), iv: niv } } }")
 fn cfb8_decrypt(state: Cfb8State, ciphertext: Bytes) -> { data: Bytes, state: Cfb8State } = {
   let len = bytes.len(ciphertext)
-  var out = bytes.new(len)
+  var out = bytes.zeros(len)
   var iv = state.iv
   for i in 0..len {
     let encrypted = encrypt_block(iv, state.expanded_key)
-    let cipher_byte = bytes.read_u8(ciphertext, i)
-    out = bytes.set(out, i, int.bxor(cipher_byte, bytes.read_u8(encrypted, 0)))
-    iv = bytes.concat(bytes.slice(iv, 1, 16), bytes.from_list([cipher_byte]))
+    let cipher_byte = bytes.get(ciphertext, i) ?? 0
+    out = bytes.set(out, i, int.bxor(cipher_byte, bytes.get(encrypted, 0) ?? 0))
+    iv = bytes.slice(iv, 1, 16) + bytes.from_list([cipher_byte])
   }
   { data: out, state: { key: state.key, expanded_key: state.expanded_key, iv: iv } }
 }
@@ -216,8 +216,8 @@ test "NIST SP 800-38A F.1.1 ECB vector 2" {
 }
 
 test "block encrypt - all zeros" {
-  let key = bytes.new(16)
-  let plain = bytes.new(16)
+  let key = bytes.zeros(16)
+  let plain = bytes.zeros(16)
   let expected = bytes.from_list([0x66, 0xE9, 0x4B, 0xD4, 0xEF, 0x8A, 0x2C, 0x3B, 0x88, 0x4C, 0xFA, 0x59, 0xCA, 0x34, 0x2B, 0x2E])
   assert_eq(bytes.to_list(encrypt_block(plain, expand_key(key))), bytes.to_list(expected))
 }
@@ -270,7 +270,7 @@ test "CFB8 roundtrip - single byte" {
 }
 
 test "CFB8 roundtrip - empty" {
-  let enc = cfb8_encrypt(new_cfb8(NIST_KEY, NIST_IV), bytes.new(0))
+  let enc = cfb8_encrypt(new_cfb8(NIST_KEY, NIST_IV), bytes.zeros(0))
   assert_eq(bytes.len(enc.data), 0)
 }
 
@@ -281,7 +281,7 @@ test "CFB8 streaming - chunks match single" {
   let r1 = cfb8_encrypt(s0, bytes.slice(data, 0, 5))
   let r2 = cfb8_encrypt(r1.state, bytes.slice(data, 5, 10))
   let r3 = cfb8_encrypt(r2.state, bytes.slice(data, 10, 16))
-  let chunked = bytes.concat(bytes.concat(r1.data, r2.data), r3.data)
+  let chunked = (r1.data + r2.data) + r3.data
   assert_eq(bytes.to_list(full.data), bytes.to_list(chunked))
 }
 
@@ -293,8 +293,8 @@ test "CFB8 - ciphertext differs from plaintext" {
 
 test "CFB8 - different keys produce different output" {
   let plain = bytes.from_string("test data")
-  let key1 = bytes.new(16)
-  var key2 = bytes.new(16)
+  let key1 = bytes.zeros(16)
+  var key2 = bytes.zeros(16)
   key2 = bytes.set(key2, 15, 1)
   let e1 = cfb8_encrypt(new_cfb8(key1, NIST_IV), plain)
   let e2 = cfb8_encrypt(new_cfb8(key2, NIST_IV), plain)
@@ -303,8 +303,8 @@ test "CFB8 - different keys produce different output" {
 
 test "CFB8 - different IVs produce different output" {
   let plain = bytes.from_string("test data")
-  let iv1 = bytes.new(16)
-  var iv2 = bytes.new(16)
+  let iv1 = bytes.zeros(16)
+  var iv2 = bytes.zeros(16)
   iv2 = bytes.set(iv2, 15, 1)
   let e1 = cfb8_encrypt(new_cfb8(NIST_KEY, iv1), plain)
   let e2 = cfb8_encrypt(new_cfb8(NIST_KEY, iv2), plain)
