@@ -56,7 +56,7 @@ local fn gmul(a: Int, b: Int) -> Int = {
 
 fn expand_key(key: Bytes) -> Bytes = {
   var w = bytes.zeros(176)
-  for i in 0..16 { w = bytes.set(w, i, bytes.get(key, i) ?? 0) }
+  for i in 0..<16 { w = bytes.set(w, i, bytes.get(key, i) ?? 0) }
   var i = 4
   while i < 44 {
     let t0 = bytes.get(w, (i - 1) * 4) ?? 0
@@ -88,7 +88,7 @@ fn expand_key(key: Bytes) -> Bytes = {
 
 local fn sub_bytes(state: Bytes) -> Bytes = {
   var s = state
-  for i in 0..16 { s = bytes.set(s, i, bytes.get(SBOX, bytes.get(s, i) ?? 0) ?? 0) }
+  for i in 0..<16 { s = bytes.set(s, i, bytes.get(SBOX, bytes.get(s, i) ?? 0) ?? 0) }
   s
 }
 
@@ -134,7 +134,7 @@ local fn mix_columns(state: Bytes) -> Bytes = {
 local fn add_round_key(state: Bytes, ek: Bytes, round: Int) -> Bytes = {
   var s = state
   let off = round * 16
-  for i in 0..16 { s = bytes.set(s, i, int.bxor(bytes.get(s, i) ?? 0, bytes.get(ek, off + i) ?? 0)) }
+  for i in 0..<16 { s = bytes.set(s, i, int.bxor(bytes.get(s, i) ?? 0, bytes.get(ek, off + i) ?? 0)) }
   s
 }
 
@@ -142,7 +142,7 @@ local fn add_round_key(state: Bytes, ek: Bytes, round: Int) -> Bytes = {
 
 fn encrypt_block(block: Bytes, expanded_key: Bytes) -> Bytes = {
   var state = add_round_key(block, expanded_key, 0)
-  for round in 1..10 {
+  for round in 1..<10 {
     state = sub_bytes(state)
     state = shift_rows(state)
     state = mix_columns(state)
@@ -169,7 +169,7 @@ fn cfb8_encrypt(state: Cfb8State, plaintext: Bytes) -> { data: Bytes, state: Cfb
   let len = bytes.len(plaintext)
   var out = bytes.zeros(len)
   var iv = state.iv
-  for i in 0..len {
+  for i in 0..<len {
     let encrypted = encrypt_block(iv, state.expanded_key)
     let cipher_byte = int.bxor(bytes.get(plaintext, i) ?? 0, bytes.get(encrypted, 0) ?? 0)
     out = bytes.set(out, i, cipher_byte)
@@ -183,7 +183,7 @@ fn cfb8_decrypt(state: Cfb8State, ciphertext: Bytes) -> { data: Bytes, state: Cf
   let len = bytes.len(ciphertext)
   var out = bytes.zeros(len)
   var iv = state.iv
-  for i in 0..len {
+  for i in 0..<len {
     let encrypted = encrypt_block(iv, state.expanded_key)
     let cipher_byte = bytes.get(ciphertext, i) ?? 0
     out = bytes.set(out, i, int.bxor(cipher_byte, bytes.get(encrypted, 0) ?? 0))
